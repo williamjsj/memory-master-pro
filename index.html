@@ -39,18 +39,15 @@
 
         button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4); }
 
-        /* Estadísticas */
         .stats { font-size: 1.2rem; margin-bottom: 15px; display: flex; gap: 30px; }
         .stats b { color: var(--primary); }
 
-        /* Tablero */
         .tablero {
             display: grid;
             gap: 12px;
             perspective: 1000px;
         }
 
-        /* Estructura de la Carta */
         .carta {
             width: 80px;
             height: 100px;
@@ -62,7 +59,6 @@
 
         .carta.flipped { transform: rotateY(180deg); }
 
-        /* ESTADO: PAREJA ENCONTRADA */
         .carta.matched {
             transform: rotateY(180deg);
             cursor: default;
@@ -71,10 +67,9 @@
         .carta.matched .frente {
             border: 3px solid var(--success);
             box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
-            animation: aciertoAnim 0.6s ease; /* Animación de acierto */
+            animation: aciertoAnim 0.6s ease;
         }
 
-        /* CARAS */
         .cara {
             position: absolute;
             width: 100%;
@@ -100,7 +95,6 @@
             transform: rotateY(180deg);
         }
 
-        /* ANIMACIONES */
         @keyframes aciertoAnim {
             0% { transform: rotateY(180deg) scale(1); }
             50% { transform: rotateY(180deg) scale(1.15); filter: brightness(1.2); }
@@ -129,7 +123,7 @@
         <span>Parejas: <b id="parejas">0</b></span>
     </div>
 
-    <div class="tablero" id="tablero"></div>
+    <div id="tablero" class="tablero"></div>
 
     <footer class="footer">Desarrollado por <strong>William Salazar</strong></footer>
 
@@ -140,6 +134,10 @@
         let intentos = 0;
         let aciertos = 0;
         let total = 0;
+
+        // Cargar sonidos
+        const sonidoAcierto = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
+        const sonidoVictoria = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
 
         function iniciar(num, col) {
             const t = document.getElementById('tablero');
@@ -183,13 +181,20 @@
             if (a.dataset.v === b.dataset.v) {
                 // ¡ACIERTO!
                 setTimeout(() => {
+                    sonidoAcierto.play(); // Reproducir sonido de pareja encontrada
                     a.classList.add('matched');
                     b.classList.add('matched');
                     aciertos++;
                     document.getElementById('parejas').innerText = aciertos;
                     seleccionadas = [];
                     bloqueado = false;
-                    if (aciertos === total) alert("¡Maestro de la memoria! Ganaste.");
+                    
+                    if (aciertos === total) {
+                        setTimeout(() => {
+                            sonidoVictoria.play(); // Sonido especial al ganar
+                            alert("¡Maestro de la memoria! Ganaste.");
+                        }, 500);
+                    }
                 }, 300);
             } else {
                 // ERROR
