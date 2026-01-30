@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Master Pro - William Salazar</title>
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --success: #10b981;
+            --bg: #0f172a;
+            --card-back: #1e293b;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .controles { margin-bottom: 20px; display: flex; gap: 10px; }
+
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4); }
+
+        /* Estadísticas */
+        .stats { font-size: 1.2rem; margin-bottom: 15px; display: flex; gap: 30px; }
+        .stats b { color: var(--primary); }
+
+        /* Tablero */
+        .tablero {
+            display: grid;
+            gap: 12px;
+            perspective: 1000px;
+        }
+
+        /* Estructura de la Carta */
+        .carta {
+            width: 80px;
+            height: 100px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .carta.flipped { transform: rotateY(180deg); }
+
+        /* ESTADO: PAREJA ENCONTRADA */
+        .carta.matched {
+            transform: rotateY(180deg);
+            cursor: default;
+        }
+
+        .carta.matched .frente {
+            border: 3px solid var(--success);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+            animation: aciertoAnim 0.6s ease; /* Animación de acierto */
+        }
+
+        /* CARAS */
+        .cara {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .atras {
+            background: var(--card-back);
+            border: 2px solid #334155;
+        }
+
+        .atras::after { content: "⭐"; font-size: 1.5rem; opacity: 0.3; }
+
+        .frente {
+            background: white;
+            transform: rotateY(180deg);
+        }
+
+        /* ANIMACIONES */
+        @keyframes aciertoAnim {
+            0% { transform: rotateY(180deg) scale(1); }
+            50% { transform: rotateY(180deg) scale(1.15); filter: brightness(1.2); }
+            100% { transform: rotateY(180deg) scale(1); }
+        }
+
+        .footer {
+            margin-top: auto;
+            padding: 20px;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🧠 Memory Master Pro</h1>
+    
+    <div class="controles">
+        <button onclick="iniciar(12, 4)">Fácil</button>
+        <button onclick="iniciar(16, 4)">Medio</button>
+        <button onclick="iniciar(20, 5)">Difícil</button>
+    </div>
+
+    <div class="stats">
+        <span>Intentos: <b id="intentos">0</b></span>
+        <span>Parejas: <b id="parejas">0</b></span>
+    </div>
+
+    <div class="tablero" id="tablero"></div>
+
+    <footer class="footer">Desarrollado por <strong>William Salazar</strong></footer>
+
+    <script>
+        const emojis = ['🐯', '🐲', '🍄', '🚀', '💎', '⚽', '🍕', '🎸', '🍦', '🛸'];
+        let seleccionadas = [];
+        let bloqueado = false;
+        let intentos = 0;
+        let aciertos = 0;
+        let total = 0;
+
+        function iniciar(num, col) {
+            const t = document.getElementById('tablero');
+            t.innerHTML = '';
+            t.style.gridTemplateColumns = `repeat(${col}, 80px)`;
+            
+            intentos = 0; aciertos = 0; total = num / 2;
+            document.getElementById('intentos').innerText = '0';
+            document.getElementById('parejas').innerText = '0';
+
+            let m = emojis.sort(() => 0.5 - Math.random()).slice(0, total);
+            let baraja = [...m, ...m].sort(() => 0.5 - Math.random());
+
+            baraja.forEach(emoji => {
+                const c = document.createElement('div');
+                c.className = 'carta';
+                c.dataset.v = emoji;
+                c.innerHTML = `<div class="cara atras"></div><div class="frente cara">${emoji}</div>`;
+                c.onclick = () => girar(c);
+                t.appendChild(c);
+            });
+        }
+
+        function girar(c) {
+            if (bloqueado || c.classList.contains('flipped') || c.classList.contains('matched')) return;
+
+            c.classList.add('flipped');
+            seleccionadas.push(c);
+
+            if (seleccionadas.length === 2) {
+                intentos++;
+                document.getElementById('intentos').innerText = intentos;
+                check();
+            }
+        }
+
+        function check() {
+            bloqueado = true;
+            let [a, b] = seleccionadas;
+
+            if (a.dataset.v === b.dataset.v) {
+                // ¡ACIERTO!
+                setTimeout(() => {
+                    a.classList.add('matched');
+                    b.classList.add('matched');
+                    aciertos++;
+                    document.getElementById('parejas').innerText = aciertos;
+                    seleccionadas = [];
+                    bloqueado = false;
+                    if (aciertos === total) alert("¡Maestro de la memoria! Ganaste.");
+                }, 300);
+            } else {
+                // ERROR
+                setTimeout(() => {
+                    a.classList.remove('flipped');
+                    b.classList.remove('flipped');
+                    seleccionadas = [];
+                    bloqueado = false;
+                }, 800);
+            }
+        }
+
+        iniciar(12, 4);
+    </script>
+</body>
+</html>
